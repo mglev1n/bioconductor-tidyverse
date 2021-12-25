@@ -23,6 +23,7 @@ RUN install2.r --error --skipinstalled --ncpus -1 \
     lubridate \
     metafor \
     qs \
+    tarchetypes \
     targets \
     tidygraph \
     tidymodels \
