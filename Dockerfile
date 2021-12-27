@@ -30,5 +30,8 @@ RUN install2.r --error --skipinstalled --ncpus -1 \
     tidymodels \
     visNetwork \
     && rm -rf /tmp/downloaded_packages/
+    
+## Update Arrow with compression libraries
+RUN R -e 'arrow::install_arrow()'
   
 LABEL org.opencontainers.image.source=https://github.com/mglev1n/bioconductor-tidyverse
