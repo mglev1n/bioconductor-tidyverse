@@ -32,6 +32,17 @@ RUN install2.r --error --skipinstalled --ncpus -1 \
     && rm -rf /tmp/downloaded_packages/
     
 ## Update Arrow with compression libraries
-RUN R -e 'arrow::install_arrow()'
+RUN R -e 'arrow::install_arrow()' \
+    && rm -rf /tmp/downloaded_packages/
+    
+## Install MRC-IEU packages
+RUN R -e 'devtools::install_github("MRCIEU/TwoSampleMR")' \
+    && R -e 'devtools::install_github("mrcieu/ieugwasr")' \
+    && rm -rf /tmp/downloaded_packages/
+
+## Install my custom packages
+RUN R -e 'devtools::install_github("mglev1n/annotateR")' \
+    && R -e 'devtools::install_github("mglev1n/locusplotr")' \
+    && rm -rf /tmp/downloaded_packages/
   
 LABEL org.opencontainers.image.source=https://github.com/mglev1n/bioconductor-tidyverse
