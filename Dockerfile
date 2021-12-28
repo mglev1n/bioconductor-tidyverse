@@ -32,7 +32,7 @@ RUN install2.r --error --skipinstalled --ncpus -1 \
     && rm -rf /tmp/downloaded_packages/
     
 ## Update Arrow with compression libraries
-RUN R -e 'arrow::install_arrow()' \
+RUN R -e 'arrow::install_arrow(minimal = FALSE)' \
     && rm -rf /tmp/downloaded_packages/
     
 ## Install MRC-IEU packages
