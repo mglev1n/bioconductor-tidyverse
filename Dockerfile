@@ -44,5 +44,15 @@ RUN R -e 'devtools::install_github("MRCIEU/TwoSampleMR")' \
 RUN R -e 'devtools::install_github("mglev1n/annotateR")' \
     && R -e 'devtools::install_github("mglev1n/locusplotr")' \
     && rm -rf /tmp/downloaded_packages/
+    
+## Install Genomic-SEM related packages
+RUN R -e 'devtools::install_github("cjvanlissa/tidySEM")' \
+    && R -e 'devtools::install_github("GenomicSEM/GenomicSEM")' \
+    && install2.r --error --skipinstalled --ncpus -1 \
+       corrr \
+       gdata \
+       heatmaply \
+       lavaan \
+       && rm -rf /tmp/downloaded_packages/
   
 LABEL org.opencontainers.image.source=https://github.com/mglev1n/bioconductor-tidyverse
