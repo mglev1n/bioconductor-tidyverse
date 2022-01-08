@@ -19,6 +19,7 @@ RUN install2.r --error --skipinstalled --ncpus -1 \
     data.table \
     clustermq \
     future.callr \
+    future.batchtools \
     glue \
     here \
     lubridate \
