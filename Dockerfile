@@ -55,5 +55,9 @@ RUN R -e 'devtools::install_github("cjvanlissa/tidySEM")' \
        heatmaply \
        lavaan \
        && rm -rf /tmp/downloaded_packages/
+
+## Install Miscellaneous Genomics Packages
+RUN R -e 'devtools::install_github("privefl/bigsnpr")' \
+    && rm -rf /tmp/downloaded_packages/
   
 LABEL org.opencontainers.image.source=https://github.com/mglev1n/bioconductor-tidyverse
