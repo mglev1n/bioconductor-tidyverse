@@ -58,6 +58,8 @@ RUN R -e 'devtools::install_github("cjvanlissa/tidySEM")' \
 
 ## Install Miscellaneous Genomics Packages
 RUN R -e 'devtools::install_github("privefl/bigsnpr")' \
+    && R -e 'devtools::install_github("jrs95/hyprcoloc", build_opts = c("--resave-data", "--no-manual"), build_vignettes = TRUE)' \
+    && R -e 'devtools::install_github("chr1swallace/coloc@main",build_vignettes=TRUE)' \
     && rm -rf /tmp/downloaded_packages/
   
 LABEL org.opencontainers.image.source=https://github.com/mglev1n/bioconductor-tidyverse
