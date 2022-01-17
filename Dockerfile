@@ -62,6 +62,7 @@ RUN R -e 'devtools::install_github("privefl/bigsnpr")' \
     && R -e 'devtools::install_github("chr1swallace/coloc@main",build_vignettes=TRUE)' \
     && install2.r --error --skipinstalled --ncpus -1 \
        quadprog \
+       tidygenomics \
     && rm -rf /tmp/downloaded_packages/
   
 LABEL org.opencontainers.image.source=https://github.com/mglev1n/bioconductor-tidyverse
