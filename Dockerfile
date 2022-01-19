@@ -60,6 +60,7 @@ RUN R -e 'devtools::install_github("cjvanlissa/tidySEM")' \
 RUN R -e 'devtools::install_github("privefl/bigsnpr")' \
     && R -e 'devtools::install_github("jrs95/hyprcoloc", build_opts = c("--resave-data", "--no-manual"), build_vignettes = TRUE)' \
     && R -e 'devtools::install_github("chr1swallace/coloc@main",build_vignettes=TRUE)' \
+    && R -e 'BiocManager::install("BiocGenerics", version = "0.40.0")' \
     && R -e 'devtools::install_github("mrcieu/gwasvcf")' \
     && R -e 'devtools::install_github("explodecomputer/genetics.binaRies")' \
     && install2.r --error --skipinstalled --ncpus -1 \
