@@ -62,6 +62,7 @@ RUN R -e 'devtools::install_github("privefl/bigsnpr")' \
     && R -e 'devtools::install_github("chr1swallace/coloc@main", build_vignettes=TRUE)' \
     && R -e 'devtools::install_github("explodecomputer/genetics.binaRies")' \
     && R -e 'devtools::install_github("mrcieu/gwasglue")' \
+    && R -e 'devtools::install_github("mrcieu/gwasvcf")' \
     && R -e 'BiocManager::install("VariantAnnotation")' \
     && install2.r --error --skipinstalled --ncpus -1 \
        quadprog \
