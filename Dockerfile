@@ -67,6 +67,8 @@ RUN R -e 'devtools::install_github("privefl/bigsnpr")' \
        quadprog \
        tidygenomics \
        vcfR \
+       tidygraph \
+       ggraph \
     && rm -rf /tmp/downloaded_packages/
   
 LABEL org.opencontainers.image.source=https://github.com/mglev1n/bioconductor-tidyverse
