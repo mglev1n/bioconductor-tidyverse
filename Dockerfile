@@ -1,6 +1,6 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_14
      
-RUN echo "The PAT is: ${GITHUB_PAT}"
+RUN echo "The PAT is: ${TEST_VAR}"
 
 RUN env
 
