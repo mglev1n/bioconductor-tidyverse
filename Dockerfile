@@ -7,6 +7,10 @@ RUN --mount=type=secret,id=github_token \
      
 ARG GITHUB_PAT=$GITHUB_PAT
 
+RUN env
+
+RUN R -e 'Sys.getenv()'
+
 ## Add system packages
 RUN apt-get update && apt-get install -y \
   cmake \
