@@ -1,5 +1,9 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_14
 
+## Load GITHUB_PAT into environment variable to overcome rate limiting
+RUN --mount=type=secret,id=GITHUB_PAT \
+   export GITHUB_PAT=$(cat /run/secrets/GITHUB_PAT)
+
 ## Add system packages
 RUN apt-get update && apt-get install -y \
   cmake \
