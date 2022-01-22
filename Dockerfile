@@ -1,18 +1,16 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_14
 
-RUN env
-
-## Load GITHUB_PAT into environment variable to overcome rate limiting
-RUN --mount=type=secret,id=GITHUB_PAT \
-   export GITHUB_PAT=$(cat /run/secrets/GITHUB_PAT)
-   
-RUN env
-
 ## Add system packages
 RUN apt-get update && apt-get install -y \
   cmake \
   openssh-client \
   libssh-dev
+
+## Print Environment  
+RUN R -e 'Sys.getenv()' \
+    && rm -rf /tmp/downloaded_packages/
+    
+RUN touch ~/.Renviron | echo $GITHUB_PAT > ~/.Renviron
 
 ## Print Environment  
 RUN R -e 'Sys.getenv()' \
@@ -82,5 +80,8 @@ RUN R -e 'remotes::install_github("privefl/bigsnpr")' \
        tidygraph \
        ggraph \
     && rm -rf /tmp/downloaded_packages/
+    
+# Remove .Renviron
+RUN rm ~/.Renviron
   
 LABEL org.opencontainers.image.source=https://github.com/mglev1n/bioconductor-tidyverse
