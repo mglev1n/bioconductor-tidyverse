@@ -4,8 +4,6 @@ RUN --mount=type=secret,id=GITHUB_PAT \
      export GITHUB_PAT=$(cat /run/secrets/GITHUB_PAT) && \
      echo $GITHUB_PAT
 
-ARG GITHUB_PAT=$GITHUB_PAT
-
 RUN env
 
 RUN R -e 'Sys.getenv()'
