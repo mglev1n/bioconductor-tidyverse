@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
   libssh-dev
 
 ## Print Environment  
-RUN R -e 'Sys.getenv()' \
+RUN R -e '!is.na(Sys.getenv("BIOCONDUCTOR_DOCKER_VERSION"))' \
+    R -e '!is.na(Sys.getenv("GITHUB_PAT"))' \
     && rm -rf /tmp/downloaded_packages/
 
 ## Install bioconductor Packages   
