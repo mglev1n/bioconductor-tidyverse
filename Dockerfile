@@ -1,5 +1,10 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_14
 
+RUN --mount=type=secret,id=github_token \
+    --mount=type=secret,id=GITHUB_PAT \
+     export API_ENDPOINT=$(cat /run/secrets/github_token) && \
+     export API_PASSWORD=$(cat /run/secrets/GITHUB_PAT)
+
 RUN env
 
 RUN R -e 'Sys.getenv()'
