@@ -1,17 +1,10 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_14
 
-RUN env
-
 ## Add system packages
 RUN apt-get update && apt-get install -y \
   cmake \
   openssh-client \
   libssh-dev
-
-## Print Environment  
-RUN R -e '!is.na(Sys.getenv("BIOCONDUCTOR_DOCKER_VERSION"))' \
-    R -e '!is.na(Sys.getenv("GITHUB_PAT"))' \
-    && rm -rf /tmp/downloaded_packages/
 
 ## Install bioconductor Packages   
 RUN R -e 'BiocManager::install("rtracklayer")' \
@@ -77,8 +70,5 @@ RUN R -e 'remotes::install_github("privefl/bigsnpr")' \
        tidygraph \
        ggraph \
     && rm -rf /tmp/downloaded_packages/
-    
-# Remove .Renviron
-RUN rm ~/.Renviron
   
 LABEL org.opencontainers.image.source=https://github.com/mglev1n/bioconductor-tidyverse
