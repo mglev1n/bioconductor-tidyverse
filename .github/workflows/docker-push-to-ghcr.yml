@@ -9,14 +9,13 @@ on:
   push:
     branches:
       - main
-
+env:
+  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+  GITHUB_PAT_GITHUB_COM: ${{ secrets.GITHUB_TOKEN }}
+  
 jobs:
   docker_publish:
     runs-on: "ubuntu-20.04"
-    
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_PAT_GITHUB_COM: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v2
