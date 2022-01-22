@@ -37,20 +37,20 @@ RUN R -e 'arrow::install_arrow(minimal = FALSE)' \
     && rm -rf /tmp/downloaded_packages/
     
 ## Install MRC-IEU packages
-RUN R -e 'devtools::install_github("MRCIEU/TwoSampleMR")' \
-    && R -e 'devtools::install_github("mrcieu/ieugwasr")' \
-    && R -e 'devtools::install_github("explodecomputer/genetics.binaRies")' \
-    && R -e 'devtools::install_github("mrcieu/gwasglue")' \
+RUN R -e 'remotes::install_github("MRCIEU/TwoSampleMR")' \
+    && R -e 'remotes::install_github("mrcieu/ieugwasr")' \
+    && R -e 'remotes::install_github("explodecomputer/genetics.binaRies")' \
+    && R -e 'remotes::install_github("mrcieu/gwasglue")' \
     && rm -rf /tmp/downloaded_packages/
 
 ## Install my custom packages
-RUN R -e 'devtools::install_github("mglev1n/annotateR")' \
-    && R -e 'devtools::install_github("mglev1n/locusplotr")' \
+RUN R -e 'remotes::install_github("mglev1n/annotateR")' \
+    && R -e 'remotes::install_github("mglev1n/locusplotr")' \
     && rm -rf /tmp/downloaded_packages/
     
 ## Install Genomic-SEM related packages
-RUN R -e 'devtools::install_github("cjvanlissa/tidySEM")' \
-    && R -e 'devtools::install_github("GenomicSEM/GenomicSEM")' \
+RUN R -e 'remotes::install_github("cjvanlissa/tidySEM")' \
+    && R -e 'remotes::install_github("GenomicSEM/GenomicSEM")' \
     && install2.r --error --skipinstalled --ncpus -1 \
        corrr \
        gdata \
@@ -59,9 +59,9 @@ RUN R -e 'devtools::install_github("cjvanlissa/tidySEM")' \
        && rm -rf /tmp/downloaded_packages/
 
 ## Install Miscellaneous Genomics Packages
-RUN R -e 'devtools::install_github("privefl/bigsnpr")' \
-    && R -e 'devtools::install_github("jrs95/hyprcoloc", build_opts = c("--resave-data", "--no-manual"), build_vignettes = TRUE)' \
-    && R -e 'devtools::install_github("chr1swallace/coloc@main", build_vignettes=TRUE)' \
+RUN R -e 'remotes::install_github("privefl/bigsnpr")' \
+    && R -e 'remotes::install_github("jrs95/hyprcoloc", build_opts = c("--resave-data", "--no-manual"), build_vignettes = TRUE)' \
+    && R -e 'remotes::install_github("chr1swallace/coloc@main", build_vignettes=TRUE)' \
     && R -e 'BiocManager::install("VariantAnnotation")' \
     && install2.r --error --skipinstalled --ncpus -1 \
        quadprog \
