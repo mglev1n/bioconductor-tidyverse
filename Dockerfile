@@ -1,19 +1,12 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_14
 
-RUN echo $GITHUB_PAT
+RUN echo env
 
 ## Add system packages
 RUN apt-get update && apt-get install -y \
   cmake \
   openssh-client \
   libssh-dev
-
-## Print Environment  
-RUN R -e 'Sys.getenv()' \
-    && rm -rf /tmp/downloaded_packages/
-    
-RUN touch ~/.Renviron | GITHUB_PAT="GITHUB_PAT=$GITHUB_PAT" | echo $GITHUB_PAT >  ~/.Renviron \
-    && less ~/.Renviron
 
 ## Print Environment  
 RUN R -e 'Sys.getenv()' \
