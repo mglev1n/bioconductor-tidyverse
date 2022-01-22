@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
 RUN R -e 'Sys.getenv()' \
     && rm -rf /tmp/downloaded_packages/
     
-RUN touch ~/.Renviron | echo $GITHUB_PAT > ~/.Renviron
+RUN touch ~/.Renviron | GITHUB_PAT="GITHUB_PAT=$GITHUB_PAT" | echo $GITHUB_PAT >  ~/.Renviron \
+    && less ~/.Renviron
 
 ## Print Environment  
 RUN R -e 'Sys.getenv()' \
