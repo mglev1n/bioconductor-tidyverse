@@ -9,23 +9,27 @@ on:
   push:
     branches:
       - main
-env:
-  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-  GITHUB_PAT_GITHUB_COM: ${{ secrets.GITHUB_TOKEN }}
-  TEST_VAR: "test"
   
 jobs:
   docker_publish:
     runs-on: "ubuntu-20.04"
 
     steps:
-      - uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
-      # https://github.com/marketplace/actions/push-to-ghcr
-      - name: Build and publish a Docker image for ${{ github.repository }}
-        uses: macbre/push-to-ghcr@master
-        with:
-          image_name: ${{ github.repository }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          # optionally push to the Docker Hub (docker.io)
-          # docker_io_token: ${{ secrets.DOCKER_IO_ACCESS_TOKEN }}  # see https://hub.docker.com/settings/security
+    - name: Build, tag, push
+      uses: cresh-io/action-docker-image-build-tag-push@v1
+      with:
+        registry: "${{ env.REGISTRY }}"
+        username: "${{ github.actor }}"
+        password: "${{ secrets.GITHUB_TOKEN }}"
+        image-name: "${{ github.repository }}"
+        github-sha: "${{ github.sha }}"
+        action: "${{ github.event.action }}"
+        merged: "${{ github.event.pull_request.merged }}"
+        build-args: |
+          GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
+          TEST_VAR="test"
