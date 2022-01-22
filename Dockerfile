@@ -4,7 +4,11 @@ RUN --mount=type=secret,id=github_token \
     --mount=type=secret,id=GITHUB_PAT \
      export github_token=$(cat /run/secrets/github_token) && \
      export GITHUB_PAT=$(cat /run/secrets/GITHUB_PAT) && \
-     export TEST_VAT="test"
+     export TEST_VAR="test"
+     
+ARG github_token=$github_token
+ARG GITHUB_PAT=$GITHUB_PAT
+ARG TEST_VAR=$TEST_VAR
 
 RUN env
 
