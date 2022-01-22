@@ -6,6 +6,10 @@ RUN apt-get update && apt-get install -y \
   openssh-client \
   libssh-dev
 
+## Print Environment  
+RUN R -e 'Sys.getenv()' \
+    && rm -rf /tmp/downloaded_packages/
+
 ## Install bioconductor Packages   
 RUN R -e 'BiocManager::install("rtracklayer")' \
     && rm -rf /tmp/downloaded_packages/
