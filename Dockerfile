@@ -41,7 +41,6 @@ RUN R -e 'devtools::install_github("MRCIEU/TwoSampleMR")' \
     && R -e 'devtools::install_github("mrcieu/ieugwasr")' \
     && R -e 'devtools::install_github("explodecomputer/genetics.binaRies")' \
     && R -e 'devtools::install_github("mrcieu/gwasglue")' \
-    && R -e 'devtools::install_github("mrcieu/gwasvcf")' \
     && rm -rf /tmp/downloaded_packages/
 
 ## Install my custom packages
