@@ -1,6 +1,11 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_14
 
-ARG GITHUB_PAT=$GITHUB_PAT
+RUN --mount=type=secret,id=github_token \
+    --mount=type=secret,id=GITHUB_PAT \
+     export github_token=$(cat /run/secrets/github_token) && \
+     export GITHUB_PAT=$(cat /run/secrets/GITHUB_PAT)
+     
+RUN echo "The PAT is:${{GITHUB_PAT}}"
 
 RUN env
 
