@@ -1,6 +1,6 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_14
 
-RUN echo env
+RUN env
 
 ## Add system packages
 RUN apt-get update && apt-get install -y \
