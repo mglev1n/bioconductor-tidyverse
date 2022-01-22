@@ -5,7 +5,7 @@ RUN --mount=type=secret,id=github_token \
      export github_token=$(cat /run/secrets/github_token) && \
      export GITHUB_PAT=$(cat /run/secrets/GITHUB_PAT)
      
-RUN echo "The PAT is:${{GITHUB_PAT}}"
+RUN echo "The PAT is: ${GITHUB_PAT}"
 
 RUN env
 
