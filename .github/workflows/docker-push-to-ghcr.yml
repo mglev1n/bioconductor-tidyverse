@@ -12,6 +12,7 @@ on:
 env:
   GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
   GITHUB_PAT_GITHUB_COM: ${{ secrets.GITHUB_TOKEN }}
+  TEST_VAR: "test"
   
 jobs:
   docker_publish:
