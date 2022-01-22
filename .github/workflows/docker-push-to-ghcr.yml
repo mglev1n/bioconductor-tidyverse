@@ -11,6 +11,7 @@ on:
       - main
 env:
   REGISTRY: ghcr.io
+  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   docker_publish:
