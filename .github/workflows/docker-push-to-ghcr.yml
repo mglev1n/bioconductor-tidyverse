@@ -26,6 +26,10 @@ jobs:
           images: |
             ghcr.io/mglev1n/bioconductor-tidyverse
           # generate Docker tags based on the following events/attributes
+          flavor: |
+            latest=auto
+            prefix=
+            suffix=
           tags: |
             type=schedule
             type=ref,event=branch
