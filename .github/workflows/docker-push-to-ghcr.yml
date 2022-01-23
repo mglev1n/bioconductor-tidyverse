@@ -63,11 +63,11 @@ jobs:
             "GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}"
             
   singluarity-publish:
-    runs-on: "ubuntu-20.04"
+    runs-on: ubuntu-latest
     container:
-      image: quay.io/singularity/singularity
-      options: --privileged
-      
+      image: quay.io/singularity/singularity:v3.8.3
+    strategy:
+      fail-fast: false
       - name: Build Container
         run: |
             sudo -E singularity pull container.sif ghcr.io/${{ github.repository }}:latest
