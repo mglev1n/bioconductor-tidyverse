@@ -64,7 +64,7 @@ jobs:
             
   singluarity-publish:
     container:
-      image: quay.io/singularity/singularity:latest
+      image: quay.io/singularity/singularity
       options: --privileged
       
       - name: Build Container
