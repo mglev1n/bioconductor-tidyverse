@@ -72,7 +72,7 @@ jobs:
     steps:
       - name: Build Container
         run: |
-            sudo -E singularity pull container.sif oras://ghcr.io/${{ github.repository }}:latest
+            sudo -E singularity pull container.sif docker://ghcr.io/${{ github.repository }}:latest
             tag=singularity-latest
             # Build the container and name by tag
             echo "Tag is $tag."
