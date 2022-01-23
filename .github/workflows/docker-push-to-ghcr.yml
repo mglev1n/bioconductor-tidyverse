@@ -63,6 +63,7 @@ jobs:
             "GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}"
             
   singluarity-publish:
+    runs-on: "ubuntu-20.04"
     container:
       image: quay.io/singularity/singularity
       options: --privileged
