@@ -66,8 +66,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/singularity/singularity:v3.8.3
-    strategy:
-      fail-fast: false
+      
+    name: Build and push Singularity Container
+    steps:
       - name: Build Container
         run: |
             sudo -E singularity pull container.sif ghcr.io/${{ github.repository }}:latest
