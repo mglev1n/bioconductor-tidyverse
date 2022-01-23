@@ -1,18 +1,5 @@
 #!/bin/sh
 
-## Add system packages
-apt-get update && apt-get install -y \
-  cmake \
-  openssh-client \
-  libssh-dev
-
-## Install bioconductor Packages   
-R -e 'BiocManager::install("rtracklayer")' \
-    && rm -rf /tmp/downloaded_packages/
-    
-## Install tidyverse
-/rocker_scripts/install_tidyverse.sh
-
 ## Install R packages
 install2.r --error --skipinstalled --ncpus -1 \
     broom \
@@ -30,10 +17,6 @@ install2.r --error --skipinstalled --ncpus -1 \
     tidygraph \
     tidymodels \
     visNetwork \
-    && rm -rf /tmp/downloaded_packages/
-    
-## Update Arrow with compression libraries
-R -e 'arrow::install_arrow(minimal = FALSE)' \
     && rm -rf /tmp/downloaded_packages/
     
 ## Install MRC-IEU packages
