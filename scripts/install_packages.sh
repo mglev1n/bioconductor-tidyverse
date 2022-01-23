@@ -1,3 +1,5 @@
+#!/bin/sh
+
 env
 
 R -e 'Sys.getenv()'
