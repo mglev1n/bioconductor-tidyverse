@@ -27,7 +27,7 @@ jobs:
             ghcr.io/${{ github.repository }}
           # generate Docker tags based on the following events/attributes
           flavor: |
-            latest=auto
+            latest=true
             prefix=
             suffix=
           tags: |
