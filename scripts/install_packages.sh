@@ -2,6 +2,7 @@
 
 ## Install R packages
 install2.r --error --skipinstalled --ncpus -1 \
+    babelwhale \
     broom \
     data.table \
     clustermq \
