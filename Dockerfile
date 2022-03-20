@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
      libssh-dev
 
 ## Install Bioconductor Packages   
-RUN R -e 'BiocManager::install("rtracklayer")' \
+RUN R -e 'BiocManager::install(version = "3.14")' \
+     && R -e 'BiocManager::install("rtracklayer")' \
      && rm -rf /tmp/downloaded_packages/
     
 ## Install tidyverse
