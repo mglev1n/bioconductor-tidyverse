@@ -25,7 +25,7 @@ install2.r --error --skipinstalled --ncpus -1 \
 R -e 'remotes::install_github("MRCIEU/TwoSampleMR")' \
     && R -e 'remotes::install_github("mrcieu/ieugwasr")' \
     && R -e 'remotes::install_github("explodecomputer/genetics.binaRies")' \
-    && R -e 'remotes::install_github("mrcieu/gwasglue")' \
+  # && R -e 'remotes::install_github("mrcieu/gwasglue")' \
     && rm -rf /tmp/downloaded_packages/
 
 ## Install my custom packages
