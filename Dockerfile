@@ -4,7 +4,16 @@ FROM bioconductor/bioconductor_docker:RELEASE_3_15
 RUN apt-get update && apt-get install -y \
      cmake \
      openssh-client \
-     libssh-dev
+     libssh-dev \
+     pandoc \
+     pandoc-citeproc \
+     curl \
+     gdebi-core \
+     && rm -rf /var/lib/apt/lists/*
+
+## Install quarto
+RUN curl -LO https://quarto.org/download/latest/quarto-linux-amd64.deb
+RUN gdebi --non-interactive quarto-linux-amd64.deb
 
 ## Install Bioconductor Packages   
 RUN R -e 'BiocManager::install("rtracklayer")' \
