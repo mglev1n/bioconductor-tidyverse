@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
      cmake \
      openssh-client \
      libssh-dev \
+     libcurl4-openssl-dev \
      pandoc \
      pandoc-citeproc \
      curl \
