@@ -1,4 +1,4 @@
-FROM bioconductor/bioconductor_docker:RELEASE_3_15
+FROM bioconductor/bioconductor_docker:RELEASE_3_16
 
 ## Add system packages
 RUN apt-get update && apt-get install -y \
