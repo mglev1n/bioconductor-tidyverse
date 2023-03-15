@@ -15,7 +15,7 @@ jobname="rstudio"
 queue="voltron_rstudio"
 resource="null"
 # image="null"
-image=/project/damrauer_shared/rstudio/bioconductor-tidyverse_singularity-latest.sif
+image=./bioconductor-tidyverse_singularity-latest.sif
 
 
 echoinfo () 
