@@ -54,8 +54,3 @@ R -e 'remotes::install_github("privefl/bigsnpr")' \
        tidygraph \
        ggraph \
     && rm -rf /tmp/downloaded_packages/
-
-## Add Julia
-RUN apt-get update && apt-get install -y \
-     julia \
-     && rm -rf /var/lib/apt/lists/*
