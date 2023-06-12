@@ -1,7 +1,7 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_17
 
 ## Add system packages
-RUN apt-get update && apt-get -y --force-yes install \
+RUN apt-get update && apt-get -y install \
      cmake \
      openssh-client \
      libssh-dev \
@@ -10,8 +10,22 @@ RUN apt-get update && apt-get -y --force-yes install \
      pandoc-citeproc \
      curl \
      gdebi-core \
-     intel-mkl \
+     && apt-get clean \
      && rm -rf /var/lib/apt/lists/*
+     
+## Add intel-mkl
+RUN apt-get update && apt-get install -y intel-mkl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so     libblas.so-x86_64-linux-gnu      /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
+RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so.3   libblas.so.3-x86_64-linux-gnu    /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
+RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/liblapack.so   liblapack.so-x86_64-linux-gnu    /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
+RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/liblapack.so.3 liblapack.so.3-x86_64-linux-gnu  /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
+
+RUN echo "/opt/intel/lib/intel64"     >  /etc/ld.so.conf.d/mkl.conf
+RUN echo "/opt/intel/mkl/lib/intel64" >> /etc/ld.so.conf.d/mkl.conf
+RUN ldconfig
+RUN echo "MKL_THREADING_LAYER=GNU" >> /etc/environment
 
 ## Install quarto
 RUN curl -LO https://quarto.org/download/latest/quarto-linux-amd64.deb
