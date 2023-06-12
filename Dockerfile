@@ -1,7 +1,7 @@
 FROM bioconductor/bioconductor_docker:RELEASE_3_17
 
 ## Add system packages
-RUN apt-get update && apt-get -y install \
+RUN apt-get update && apt-get -y --force-yes install \
      cmake \
      openssh-client \
      libssh-dev \
