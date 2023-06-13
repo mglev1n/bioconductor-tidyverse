@@ -14,8 +14,14 @@ RUN apt-get update && apt-get -y install \
      && rm -rf /var/lib/apt/lists/*
      
 ## Add intel-mkl
-RUN apt update
-RUN apt -y install intel-oneapi-mkl
+RUN apt-get update -y && apt-get install -y wget gnupg
+
+RUN wget -q https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+RUN apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+RUN echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
+RUN rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+
+RUN apt-get update -y && apt-get install -y intel-oneapi-mkl
 
 RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so     libblas.so-x86_64-linux-gnu      /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
 RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so.3   libblas.so.3-x86_64-linux-gnu    /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
