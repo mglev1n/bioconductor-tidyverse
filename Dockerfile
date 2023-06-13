@@ -15,7 +15,7 @@ RUN apt-get update && apt-get -y install \
      
 ## Add intel-mkl
 RUN apt update
-RUN apt -y install intel-mkl
+RUN apt -y install intel-oneapi-mkl
 
 RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so     libblas.so-x86_64-linux-gnu      /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
 RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so.3   libblas.so.3-x86_64-linux-gnu    /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
