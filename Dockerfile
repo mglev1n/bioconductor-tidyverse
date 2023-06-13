@@ -15,7 +15,7 @@ RUN apt-get update && apt-get -y install \
      
 ## Add intel-mkl
 RUN apt update
-RUN apt install -y intel-mkl-64bit-2020.0-088
+RUN apt -y install intel-mkl
 
 RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so     libblas.so-x86_64-linux-gnu      /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
 RUN update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so.3   libblas.so.3-x86_64-linux-gnu    /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
