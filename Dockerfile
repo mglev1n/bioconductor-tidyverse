@@ -2,6 +2,7 @@ FROM bioconductor/bioconductor_docker:RELEASE_3_17
 
 ## Add system packages
 RUN apt-get update && apt-get -y install \
+     aria2 \
      cmake \
      openssh-client \
      libssh-dev \
