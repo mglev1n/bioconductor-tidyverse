@@ -25,8 +25,8 @@ RUN rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
 RUN apt-get update -y && apt-get install -y intel-oneapi-mkl
 
 ## Install quarto
-RUN curl -LO https://quarto.org/download/latest/quarto-linux-amd64.deb
-RUN gdebi --non-interactive quarto-linux-amd64.deb
+# RUN curl -LO https://quarto.org/download/latest/quarto-linux-amd64.deb
+# RUN gdebi --non-interactive quarto-linux-amd64.deb
 
 ## Install Bioconductor Packages   
 RUN R -e 'BiocManager::install("rtracklayer")' \
