@@ -307,7 +307,7 @@ cat <<EOF >> $rstudio_workdir/$jobfile
 
 LOGINHOST=scisub7
 
-module load python/3.6.1
+module load python
 
 workdir=\$(python -c 'import tempfile; print(tempfile.mkdtemp())')
 SIF=$image
@@ -325,7 +325,10 @@ END
 
 cat > \${workdir}/rsession.sh <<END
 #!/bin/sh
-module load python/3.6.1
+
+module load python
+module load singularity
+
 #export OMP_NUM_THREADS=\${LSB_DJOB_NUMPROC}
 export OPENBLAS_NUM_THREADS=1
 export LOGINHOST=scisub7
@@ -362,13 +365,23 @@ Sys.setenv(PATH = paste(old_path, "${HOME}/R/rocker-rstudio/bin", sep = ":"))
 # Sys.setenv(PATH = paste(old_path, "/lsf/10.1/linux3.10-glibc2.17-x86_64/etc", "/lsf/10.1/linux3.10-glibc2.17-x86_64/bin" , sep = ":"))
 rm(old_path)
 
+# Update Env -------------------------------------------------------------
+Sys.setenv(LSB_DEFAULTQUEUE = "${LSB_DEFAULTQUEUE}")
+Sys.setenv(LSF_SERVERDIR = "${LSF_SERVERDIR}")
+Sys.setenv(LSF_BINDIR = "${LSF_BINDIR}")
+Sys.setenv(LSF_ENVDIR = "${LSF_ENVDIR}")
+Sys.setenv(LSF_LIBDIR = "${LSF_LIBDIR}")
+Sys.setenv(MODULESHOME = "${MODULESHOME}")
+Sys.setenv(MODULEPATH = "${MODULEPATH}")
+Sys.setenv(MODULE_VERSION = "${MODULE_VERSION}")
+Sys.setenv(MODULE_VERSION_STACK = "${MODULE_VERSION_STACK}")
+
 END
 
 
 
 # export SINGULARITY_BIND="\${workdir}/run:/run, \${workdir}/tmp:/tmp, \${workdir}/database.conf:/etc/rstudio/database.conf, \${workdir}/rsession.sh:/etc/rstudio/rsession.sh, \${workdir}/var/lib/rstudio-server:/var/lib/rstudio-server, /project/PMBB/:/project/PMBB/, /scratch/:\${HOME}/roubaix/scratch/, /lsf/10.1/linux3.10-glibc2.17-x86_64/bin/:/lsf/10.1/linux3.10-glibc2.17-x86_64/bin/, /lsf/conf/:/lsf/conf/, /lsf/10.1/linux3.10-glibc2.17-x86_64/etc/:/lsf/10.1/linux3.10-glibc2.17-x86_64/etc/"
-export SINGULARITY_BIND="\${workdir}/run:/run, \${workdir}/tmp:/tmp, \${workdir}/database.conf:/etc/rstudio/database.conf, \${workdir}/rsession.sh:/etc/rstudio/rsession.sh, \${workdir}/var/lib/rstudio-server:/var/lib/rstudio-server, /project/:/project/, /project/damrauer_shared/:/project/damrauer_shared/, /scratch/:\${HOME}/${HOSTNAME}/scratch/, /appl/:/appl/, /lsf/:/lsf/, /scratch/:/scratch"
-
+export SINGULARITY_BIND="\${workdir}/run:/run, \${workdir}/tmp:/tmp, /lsf:/lsf, \${workdir}/database.conf:/etc/rstudio/database.conf, \${workdir}/rsession.sh:/etc/rstudio/rsession.sh, \${workdir}/var/lib/rstudio-server:/var/lib/rstudio-server, /project/:/project/, /project/:\${HOME}/project, /project/damrauer_shared/:\${HOME}/damrauer_shared/, /scratch/:\${HOME}/${HOSTNAME}/scratch/, /appl/:/appl/, /lsf/:/lsf/, /scratch/:/scratch, /scratch/:\${HOME}/scratch, /static:/static"
 
 
 # Do not suspend idle sessions.
@@ -528,5 +541,4 @@ main ()
 }
 
 main
-
 
