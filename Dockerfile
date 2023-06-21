@@ -11,6 +11,7 @@ RUN apt-get update && apt-get -y install \
      pandoc-citeproc \
      curl \
      gdebi-core \
+     glibc-source \
      && apt-get clean \
      && rm -rf /var/lib/apt/lists/*
      
