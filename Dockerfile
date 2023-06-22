@@ -11,7 +11,6 @@ RUN apt-get update && apt-get -y install \
      pandoc-citeproc \
      curl \
      gdebi-core \
-     libc6 \
      && apt-get clean \
      && rm -rf /var/lib/apt/lists/*
      
@@ -39,6 +38,9 @@ RUN /rocker_scripts/install_tidyverse.sh
 ## Update Arrow with compression libraries
 RUN R -e 'arrow::install_arrow(minimal = FALSE)' \
      && rm -rf /tmp/downloaded_packages/
+
+## Fix Ubuntu glibc https://bugs.launchpad.net/ubuntu/+source/glibc/+bug/1989082
+RUN chmod +x /lib/x86_64-linux-gnu/libc.so.6
 
 # Install custom packages
 #RUN mkdir -p /installation_scripts
