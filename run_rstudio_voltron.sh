@@ -8,13 +8,13 @@ set -o pipefail
 args=$@
 rstudio_workdir=$HOME/.lsf_jobs/rstudio_jobs
 ncpus=1
-mem="16G"
+mem=16384
 host="null"
 timelimit="18:00"
 jobname="rstudio"
 queue="voltron_rstudio"
 resource="null"
-image=/project/voltron/rstudio/bioconductor-tidyverse_3.17.sif
+image=/project/voltron/rstudio/containers/bioconductor-tidyverse_3.17.sif
 
 ###################################################################
 # Create functions that enable stylized command-line output
@@ -46,7 +46,7 @@ usage_msg() {
   echo ""
   echo "-n  | --ncpus     Number of CPU slots to be allocated for the container"
   echo "-m  | --host      (Optional) Specify *one* host/host group you would like the job to run eg 'roubaix'"
-  echo "-M  | --mem       Memory per CPU slot, used for resource request, default '16G'. -R 'rusage[mem=16G]'"
+  echo "-M  | --mem       Memory per CPU slot, used for resource request, default '16384'"
   echo "-W  | --timelimit Wall time for the job, format HH:MM. Default is 18:00 hours"
   echo "-J  | --jobname   Specify the job name, default 'rstudio'"
   echo "-q  | --queue     Specify the queue name, default 'voltron_normal'"
@@ -321,7 +321,7 @@ get_port
 
 PORT=\${PORT}
 
-echo -e "Starting RStudio Server session with \${LSB_MAX_NUM_PROCESSORS} core(s) and \$((MEMORY/1000))GB of RAM per core..."
+echo -e "Starting RStudio Server session with \${LSB_MAX_NUM_PROCESSORS} core(s) and \$((MEMORY/1000))GB of RAM..."
 echo
 echo -e "1. Create an SSH tunnel from your local workstation to the server by executing the following command in a new terminal window:"
 echo
@@ -343,7 +343,11 @@ echo "2. Issue the following command on the login node (\${LOGINHOST}.pmacs.upen
 echo
 echo -e "   \033[1m bkill \${LSB_JOBID} \033[0m"
 
+
+###################################################################
+# Load final modules and launch container
 module load singularity
+export SINGULARITYENV_APPEND_PATH=\${PATH}
 
 singularity exec --cleanenv $image \
     rserver --www-port \${PORT} \
