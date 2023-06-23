@@ -270,6 +270,16 @@ export LOGINHOST=scisub7
 export R_LIBS_USER=\${HOME}/R/rocker-rstudio/\${IMAGE_BASENAME}
 export RS_LOGGER_TYPE=syslog
 
+export LSB_DEFAULTQUEUE=\${LSB_DEFAULTQUEUE}
+export LSF_SERVERDIR=\${LSF_SERVERDIR}
+export LSF_BINDIR=\${LSF_BINDIR}
+export LSF_ENVDIR=\${LSF_ENVDIR}
+export LSF_LIBDIR=\${LSF_LIBDIR}
+export MODULESHOME=\${MODULESHOME}
+export MODULEPATH=\${MODULEPATH}
+export MODULE_VERSION=\${MODULE_VERSION}
+export MODULE_VERSION_STACK=\${MODULE_VERSION_STACK}
+
 exec /usr/lib/rstudio-server/bin/rsession 
 END
 
@@ -278,19 +288,19 @@ chmod +x \${workdir}/rsession.sh
 
 ###################################################################
 # Update the user's .Rprofile to load important environment variables
-cat > \${HOME}/.Rprofile <<'END'
-# Update Env -------------------------------------------------------------
-Sys.setenv(LSB_DEFAULTQUEUE = "${LSB_DEFAULTQUEUE}")
-Sys.setenv(LSF_SERVERDIR = "${LSF_SERVERDIR}")
-Sys.setenv(LSF_BINDIR = "${LSF_BINDIR}")
-Sys.setenv(LSF_ENVDIR = "${LSF_ENVDIR}")
-Sys.setenv(LSF_LIBDIR = "${LSF_LIBDIR}")
-Sys.setenv(MODULESHOME = "${MODULESHOME}")
-Sys.setenv(MODULEPATH = "${MODULEPATH}")
-Sys.setenv(MODULE_VERSION = "${MODULE_VERSION}")
-Sys.setenv(MODULE_VERSION_STACK = "${MODULE_VERSION_STACK}")
-
-END
+# cat > \${HOME}/.Rprofile <<'END'
+# # Update Env -------------------------------------------------------------
+# Sys.setenv(LSB_DEFAULTQUEUE = "${LSB_DEFAULTQUEUE}")
+# Sys.setenv(LSF_SERVERDIR = "${LSF_SERVERDIR}")
+# Sys.setenv(LSF_BINDIR = "${LSF_BINDIR}")
+# Sys.setenv(LSF_ENVDIR = "${LSF_ENVDIR}")
+# Sys.setenv(LSF_LIBDIR = "${LSF_LIBDIR}")
+# Sys.setenv(MODULESHOME = "${MODULESHOME}")
+# Sys.setenv(MODULEPATH = "${MODULEPATH}")
+# Sys.setenv(MODULE_VERSION = "${MODULE_VERSION}")
+# Sys.setenv(MODULE_VERSION_STACK = "${MODULE_VERSION_STACK}")
+# 
+# END
 
 
 ###################################################################
