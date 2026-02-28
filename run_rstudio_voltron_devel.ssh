@@ -1,0 +1,664 @@
+#!/bin/bash
+
+set -u
+set -o pipefail
+
+###################################################################
+# Set default command line options and variables
+declare -A CONFIG=(
+    [rstudio_workdir]="$HOME/.lsf_jobs/rstudio_jobs"
+    [ncpus]=1
+    [mem]=16384
+    [host]="null"
+    [timelimit]="18:00"
+    [jobname]="rstudio"
+    [queue]="voltron_rstudio"
+    [resource]="null"
+    [image]="/project/voltron/rstudio/containers/bioconductor-tidyverse_3.19.sif"
+)
+
+###################################################################
+# Create functions that enable stylized command-line output
+# Spinner array for animation
+# Spinner array for animation
+declare -a SPINNER=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+SPINNER_PID=""
+CURRENT_MESSAGE=""
+
+# Cleanup on script exit
+cleanup() {
+    kill_spinner
+    tput cnorm # Show cursor
+}
+trap cleanup EXIT
+
+# Hide/show cursor
+hide_cursor() {
+    tput civis
+}
+
+show_cursor() {
+    tput cnorm
+}
+
+# Clear the current line
+clear_line() {
+    tput el
+}
+
+# Spinner animation function
+animate_spinner() {
+    local delay=0.1
+    while :; do
+        for frame in "${SPINNER[@]}"; do
+            printf "\r%-75s\r$(tput bold)[%s]$(tput sgr0) %s" " " "$frame" "$CURRENT_MESSAGE"
+            sleep $delay
+        done
+    done
+} 2>/dev/null
+
+# Start spinner
+start_spinner() {
+    CURRENT_MESSAGE="$1"
+    hide_cursor
+    animate_spinner &
+    SPINNER_PID=$!
+}
+
+# Kill spinner
+kill_spinner() {
+    if [ -n "$SPINNER_PID" ] && ps -p $SPINNER_PID >/dev/null; then
+        kill -PIPE $SPINNER_PID >/dev/null 2>&1
+        wait $SPINNER_PID 2>/dev/null
+        SPINNER_PID=""
+        clear_line
+    fi
+}
+
+# Update spinner message
+update_spinner_message() {
+    CURRENT_MESSAGE="$1"
+    # Clear the entire line first
+    printf "\r%-75s\r" " " # Adjust 75 based on your terminal width if needed
+}
+
+# Regular logging functions
+echoinfo() {
+    kill_spinner
+    echo ""
+    echo -e "$(tput bold)[INFO]$(tput sgr0) $@"
+}
+
+echoerror() {
+    kill_spinner
+    echo ""
+    echo -e "$(tput setaf 1)[ERROR]$(tput sgr0) $@"
+}
+
+echoalert() {
+    kill_spinner
+    echo ""
+    echo -e "$(tput setaf 4)[INFO]$(tput sgr0) $@"
+}
+
+# Success messages (with checkmark)
+echosuccess() {
+    kill_spinner
+    echo ""
+    echo -e "$(tput setaf 2)[✓]$(tput sgr0) $@"
+}
+
+# In-place success message
+echosuccess_inline() {
+    # If spinner is active, update its message
+    if [ -n "$SPINNER_PID" ] && ps -p $SPINNER_PID >/dev/null; then
+        kill_spinner
+    fi
+    # Clear the entire line first
+    printf "\r%-75s\r$(tput setaf 2)[✓]$(tput sgr0) %s" " " "$@"
+}
+
+# Success with new line
+echosuccess_newline() {
+    echosuccess_inline "$@"
+    echo ""
+}
+
+###################################################################
+# Help and usage messages
+help_msg() {
+    echo ""
+    echo "This script is to submit a Singularity containerized RStudio server web instance inside an LSF job for users."
+    echo ""
+}
+
+usage_msg() {
+    cat <<EOF
+
+$(tput bold)USAGE:$(tput sgr0)
+    run_rstudio.sh [OPTIONS]
+
+$(tput bold)OPTIONS:$(tput sgr0)
+    $(tput setaf 2)-n$(tput sgr0), $(tput setaf 2)--ncpus$(tput sgr0)      Number of CPU slots to be allocated [default: ${CONFIG[ncpus]}]
+    $(tput setaf 2)-m$(tput sgr0), $(tput setaf 2)--host$(tput sgr0)       Host/host group for job execution (e.g., 'roubaix')
+    $(tput setaf 2)-M$(tput sgr0), $(tput setaf 2)--mem$(tput sgr0)        Memory per CPU slot [default: ${CONFIG[mem]}]
+    $(tput setaf 2)-W$(tput sgr0), $(tput setaf 2)--timelimit$(tput sgr0)  Wall time (HH:MM) [default: ${CONFIG[timelimit]}]
+    $(tput setaf 2)-J$(tput sgr0), $(tput setaf 2)--jobname$(tput sgr0)    Job name [default: ${CONFIG[jobname]}]
+    $(tput setaf 2)-q$(tput sgr0), $(tput setaf 2)--queue$(tput sgr0)      Queue name [default: ${CONFIG[queue]}]
+    $(tput setaf 2)-R$(tput sgr0), $(tput setaf 2)--resource$(tput sgr0)   Optional resource (himem, v100, a100)
+    $(tput setaf 2)-i$(tput sgr0), $(tput setaf 2)--image$(tput sgr0)      Singularity container image [default: ${CONFIG[image]}]
+    $(tput setaf 2)-h$(tput sgr0), $(tput setaf 2)--help$(tput sgr0)       Display this help message
+
+$(tput bold)DIRECTORIES:$(tput sgr0)
+    Working Directory: ${CONFIG[rstudio_workdir]}
+    • Job submission scripts are generated here
+    • Output and error files saved in current directory
+    • Use 'bpeek <jobid>' to check running job output
+
+$(tput bold)EXAMPLE:$(tput sgr0)
+    run_rstudio.sh -n 4 -M 32768 -W 24:00 -J myrstudio -q standard
+EOF
+}
+
+###################################################################
+# Function to ensure job is being run by a user with appropriate permissions
+run_as_user_check() {
+    myid=$(id -u)
+    if [[ $myid -lt 1000 ]]; then
+        echoerror "This script should be executed by users with UIDNumber > 1000. Exiting."
+        exit 1
+    fi
+}
+
+###################################################################
+# Function to parse the command line arguments and assign them to variables
+parse_args() {
+    # Parse command line arguments
+    OPTS=$(getopt -o n:m:M:W:J:q:R:i:h --long ncpus:,host:,mem:,timelimit:,jobname:,queue:,resource:,image:,help -n 'parse-options' -- "$@")
+
+    if [ $? != 0 ]; then
+        echoerror "Failed parsing options" >&2
+        exit 1
+    fi
+
+    eval set -- "$OPTS"
+
+    while true; do
+        case "$1" in
+        -n | --ncpus)
+            CONFIG[ncpus]="$2"
+            shift 2
+            ;;
+        -m | --host)
+            CONFIG[host]="$2"
+            shift 2
+            ;;
+        -M | --mem)
+            CONFIG[mem]="$2"
+            shift 2
+            ;;
+        -W | --timelimit)
+            CONFIG[timelimit]="$2"
+            shift 2
+            ;;
+        -J | --jobname)
+            CONFIG[jobname]="$2"
+            shift 2
+            ;;
+        -q | --queue)
+            CONFIG[queue]="$2"
+            shift 2
+            ;;
+        -R | --resource)
+            CONFIG[resource]="$2"
+            shift 2
+            ;;
+        -i | --image)
+            CONFIG[image]="$2"
+            shift 2
+            ;;
+        -h | --help)
+            usage_msg
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echoerror "Invalid option: $1"
+            exit 1
+            ;;
+        esac
+    done
+}
+
+###################################################################
+# Ensure that the necessary variables/arguments have been provided
+check_inputs() {
+    # Check working directory
+    if [[ ! -d ${CONFIG[rstudio_workdir]} ]]; then
+        mkdir -p ${CONFIG[rstudio_workdir]}
+    fi
+
+    # Validate image
+    if [[ ${CONFIG[image]} == "null" ]]; then
+        echoerror "Image not specified"
+        exit 2
+    elif [[ ! -f ${CONFIG[image]} ]]; then
+        echoerror "Specified image file ${CONFIG[image]} does not exist"
+        exit 2
+    fi
+
+    # Validate numerical values
+    if ! [[ "${CONFIG[ncpus]}" =~ ^[0-9]+$ ]]; then
+        echoerror "Invalid number of CPUs: ${CONFIG[ncpus]}"
+        exit 1
+    fi
+    if ! [[ "${CONFIG[mem]}" =~ ^[0-9]+$ ]]; then
+        echoerror "Invalid memory value: ${CONFIG[mem]}"
+        exit 1
+    fi
+
+    # Validate queue
+    if ! bqueues -o "queue_name" | grep -qw "${CONFIG[queue]}"; then
+        echoerror "Invalid queue: ${CONFIG[queue]}"
+        exit 1
+    fi
+
+    # Validate environment
+    local required_cmds=(bsub bjobs singularity openssl)
+    module load apptainer
+    for cmd in "${required_cmds[@]}"; do
+        if ! command -v $cmd &>/dev/null; then
+            echoerror "Required command missing: $cmd"
+            exit 1
+        fi
+    done
+
+    mkdir -p "${CONFIG[rstudio_workdir]}" || {
+        echoerror "Failed to create work directory"
+        exit 1
+    }
+
+    cat <<EOF
+
+$(tput bold)JOB CONFIGURATION:$(tput sgr0)
+    $(tput setaf 2)Resources:$(tput sgr0)
+        • CPUs:        ${CONFIG[ncpus]}
+        • Memory:      ${CONFIG[mem]} MB
+        • Time Limit:  ${CONFIG[timelimit]}
+
+    $(tput setaf 2)Job Details:$(tput sgr0)
+        • Name:        ${CONFIG[jobname]}
+        • Queue:       ${CONFIG[queue]}
+        • Host:        ${CONFIG[host]}
+        • Resource:    ${CONFIG[resource]}
+
+    $(tput setaf 2)Container:$(tput sgr0)
+        • Image:       ${CONFIG[image]}
+
+EOF
+}
+
+###################################################################
+# Check if other active jobs are running for this user
+check_active_jobs() {
+    start_spinner "Checking for active jobs..."
+    sleep 1 # Small delay for visual effect
+
+    if [[ $(bjobs -J ${CONFIG[jobname]} -noheader 2>/dev/null) != *"${CONFIG[jobname]}"* ]]; then
+        echosuccess_inline "No active ${CONFIG[jobname]} jobs found for $(whoami)"
+        echo -e "\n" # Add a blank line after the status
+        return
+    else
+        kill_spinner
+        echo ""
+        echoinfo "The following active ${CONFIG[jobname]} jobs have already been submitted by $(whoami):"
+        bjobs -J ${CONFIG[jobname]}
+        echo ""
+        read -r -p "Are you sure you would like to submit a new job? (Yes/No): " response
+        case "$response" in
+        [yY][eE][sS] | [yY])
+            return
+            ;;
+        *)
+            echo "Quitting..."
+            echo ""
+            exit 1
+            ;;
+        esac
+    fi
+}
+
+###################################################################
+# Function which compiles/writes the bjob file needed to launch the selected image
+
+write_bjob_file() {
+    jobfile=job_$(date +'%Y%m%d_%H%M%S.%N')
+
+    # Write main job header and LSF directives
+    cat <<EOF >${CONFIG[rstudio_workdir]}/$jobfile
+#!/bin/bash
+
+## Auto generated script for RStudio web job
+#BSUB -J ${CONFIG[jobname]}
+#BSUB -n ${CONFIG[ncpus]}
+#BSUB -q ${CONFIG[queue]} 
+EOF
+
+    # Add resource if specified
+    if [[ ${CONFIG[resource]} != "null" ]]; then
+        cat <<EOF >>${CONFIG[rstudio_workdir]}/$jobfile
+#BSUB -R ${CONFIG[resource]}
+EOF
+    fi
+
+    # Write remaining LSF directives and setup
+    cat <<EOF >>${CONFIG[rstudio_workdir]}/$jobfile
+#BSUB -W ${CONFIG[timelimit]}
+#BSUB -M ${CONFIG[mem]}
+#BSUB -R "rusage[mem=${CONFIG[mem]}]"
+#BSUB -oo ${CONFIG[rstudio_workdir]}/rstudio_%J.out
+#BSUB -eo ${CONFIG[rstudio_workdir]}/rstudio_%J.err
+
+# Load user profile
+source ~/.bashrc
+
+#######################
+# Environment Setup
+#######################
+LOGINHOST=scisub9
+SIF=${CONFIG[image]}
+PORT=\${RSTUDIO_PORT:-8787}
+MEMORY=${CONFIG[mem]}
+IMAGE_BASENAME=\$(basename "\${SIF%.*}")
+
+#######################
+# Working Directory
+#######################
+# module load python
+workdir=\$(mktemp -d -p "${CONFIG[rstudio_workdir]}" rstudio-job.XXXXXXXXXX)
+mkdir -p -m 700 \${workdir}/{run,tmp,var/lib/rstudio-server}
+
+#######################
+# LSF Command Wrappers  
+#######################
+LSF_WRAPPER_DIR="${HOME}/R/rocker-rstudio/bin"
+mkdir -p "\${LSF_WRAPPER_DIR}"
+
+echo "[INFO] Creating LSF wrappers in \${LSF_WRAPPER_DIR}..."
+
+for cmd in bsub bjobs bpeek bkill bqueues bhosts bmod bresume bstop; do
+    cat > "\${LSF_WRAPPER_DIR}/\${cmd}" << 'WRAPPERDONE'
+#!/bin/bash
+cmd_name=\$(basename "\$0")
+exec ssh -q -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 \\
+    "\${USER}@scisub9.pmacs.upenn.edu" \\
+    "/lsf/10.1/linux3.10-glibc2.17-x86_64/bin/\${cmd_name}" "\$@"
+WRAPPERDONE
+    chmod +x "\${LSF_WRAPPER_DIR}/\${cmd}"
+done
+
+ls -la "\${LSF_WRAPPER_DIR}/"
+
+if ssh -q -o BatchMode=yes -o ConnectTimeout=5 "\${USER}@scisub9.pmacs.upenn.edu" echo "SSH OK" 2>/dev/null; then
+    echo "[INFO] SSH to scisub9 verified"
+else  
+    echo "[WARN] SSH to scisub9 failed - check passwordless SSH setup"
+fi
+
+#######################
+# Configuration Files
+#######################
+
+# Database configuration
+cat > \${workdir}/database.conf <<END
+provider=sqlite
+directory=/var/lib/rstudio-server
+END
+
+# RSession configuration
+cat > \${workdir}/rsession.conf <<END
+copilot-enabled=1
+END
+
+# Create container startup script
+cat > \${workdir}/rsession.sh <<END
+#!/bin/sh  
+source ~/.bashrc
+
+# Add LSF wrappers to PATH
+# export PATH=${HOME}/R/rocker-rstudio/bin:${PATH}
+
+module load python
+export OMP_NUM_THREADS=\${LSB_DJOB_NUMPROC}
+export OPENBLAS_NUM_THREADS=\${LSB_DJOB_NUMPROC}
+export LOGINHOST=scisub9
+export R_LIBS_USER=\${HOME}/R/rocker-rstudio/\${IMAGE_BASENAME}
+export RS_LOGGER_TYPE=syslog
+export QUARTO_PATH=/project/voltron/rstudio/containers/quarto/quarto-1.6.40/bin/quarto
+export PATH=${HOME}/R/rocker-rstudio/bin:/project/voltron/rstudio/containers/quarto/quarto-1.6.40/bin:$PATH
+
+# Add LSF environment variables
+export LSB_DEFAULTQUEUE="\${LSB_DEFAULTQUEUE}"
+export LSF_SERVERDIR="\${LSF_SERVERDIR}"
+export LSF_BINDIR="\${LSF_BINDIR}"
+export LSF_ENVDIR="\${LSF_ENVDIR}"
+export LSF_LIBDIR="\${LSF_LIBDIR}"
+export MODULESHOME="\${MODULESHOME}"
+export MODULEPATH="\${MODULEPATH}"
+
+exec /usr/lib/rstudio-server/bin/rsession 
+END
+chmod +x \${workdir}/rsession.sh
+
+# Update R environment
+# cat > \${HOME}/.Rprofile <<'END'
+# # Update Env -------------------------------------------------------------
+# # Sys.setenv(LSB_DEFAULTQUEUE = "\${LSB_DEFAULTQUEUE}")
+# # Sys.setenv(LSF_SERVERDIR = "\${LSF_SERVERDIR}")
+# # Sys.setenv(LSF_BINDIR = "\${LSF_BINDIR}")
+# # Sys.setenv(LSF_ENVDIR = "\${LSF_ENVDIR}")
+# # Sys.setenv(LSF_LIBDIR = "\${LSF_LIBDIR}")
+# # Sys.setenv(MODULESHOME = "\${MODULESHOME}")
+# # Sys.setenv(MODULEPATH = "\${MODULEPATH}")
+# END
+
+#######################
+# Singularity Setup
+#######################
+# Define bind paths
+export APPTAINER_BIND="\${workdir}/run:/run,\${workdir}/tmp:/tmp,/lsf:/lsf,\${workdir}/database.conf:/etc/rstudio/database.conf,\${workdir}/rsession.conf:/etc/rstudio/rsession.conf,\${workdir}/rsession.sh:/etc/rstudio/rsession.sh,\${workdir}/var/lib/rstudio-server:/var/lib/rstudio-server,/project/:/project/,/lsf/:/lsf/,/scratch/:/scratch,/static:/static, /appl:/appl"
+export APPTAINERENV_RSTUDIO_SESSION_TIMEOUT=0
+export APPTAINERENV_USER=\$(id -un)
+export APPTAINERENV_PASSWORD=\$(openssl rand -base64 15)
+export APPTAINERENV_QUARTO_PATH=/project/voltron/rstudio/containers/quarto/quarto-1.6.40/bin
+
+#######################
+# Port Configuration
+#######################
+function get_port {
+    until ! netstat -ln | grep "  LISTEN  " | grep -iEo ":[0-9]+" | cut -d: -f2 | grep -wqc \${PORT}; do
+        ((PORT++))
+        # echo "Checking port: \${PORT}"
+    done
+    # echo "Got one: \${PORT}"
+}
+
+# echo "Finding an available port ..."
+get_port
+
+PORT=\${PORT}
+
+#######################
+# Connection Details
+#######################
+cat <<CONN
+
+$(tput bold)$(tput setaf 4)$(printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' '=')$(tput sgr0)
+$(tput bold)RStudio Server Session Started$(tput sgr0) | Cores: $(tput bold)\${LSB_MAX_NUM_PROCESSORS}$(tput sgr0) | Memory: $(tput bold)\$((MEMORY/1000))GB$(tput sgr0) 
+
+$(tput bold)CONNECTION INSTRUCTIONS:$(tput sgr0)
+$(tput setaf 2)1. Create SSH Tunnel$(tput sgr0)
+   Run in new terminal:
+   $(tput bold)ssh -N -L 8787:\${HOSTNAME}:\${PORT} \${APPTAINERENV_USER}@\${LOGINHOST}.pmacs.upenn.edu$(tput sgr0)
+
+$(tput setaf 2)2. Access RStudio$(tput sgr0)
+   Open in browser:
+   $(tput bold)http://localhost:8787$(tput sgr0)
+
+$(tput setaf 2)3. Login Credentials$(tput sgr0)
+   $(tput bold)Username:$(tput sgr0) \${APPTAINERENV_USER}
+   $(tput bold)Password:$(tput sgr0) \${APPTAINERENV_PASSWORD}
+
+$(tput bold)TO END SESSION:$(tput sgr0)
+   1. Click power button in RStudio (top right)
+   2. Run on login node (\${LOGINHOST}.pmacs.upenn.edu):
+      $(tput bold)bkill \${LSB_JOBID}$(tput sgr0)
+$(tput bold)$(tput setaf 4)$(printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' '=')$(tput sgr0)
+
+CONN
+
+#######################
+# Launch Container
+#######################
+module load apptainer
+module load sqlite
+#module load anaconda
+export APPTAINERENV_APPEND_PATH=/project/voltron/rstudio/containers/quarto/quarto-1.6.40/bin:\${PATH}
+# Create log files
+launch_log=${CONFIG[rstudio_workdir]}/launch_\${LSB_JOBID}.log
+error_log=${CONFIG[rstudio_workdir]}/error_\${LSB_JOBID}.log
+
+# echo ""
+# echo "Starting RStudio Server... (logs at \${launch_log})"
+# echo ""
+
+# Launch with output redirection
+apptainer exec --cleanenv ${CONFIG[image]} \\
+    rserver --www-port \${PORT} \\
+            --auth-none=0 \\
+            --auth-pam-helper-path=pam-helper \\
+            --auth-stay-signed-in-days=30 \\
+            --auth-timeout-minutes=0 \\
+            --server-user=\$(whoami) \\
+            --rsession-path=/etc/rstudio/rsession.sh
+            # \${launch_log} 2>\${error_log} 
+
+if [[ "\$?" -ne "0" ]];
+then
+  echo "A problem occured when starting singularity container, failed. "
+  exit 1
+fi
+
+sing_pid=\$!
+echo "RStudio started in the singularity container with PID \$sing_pid."
+echo "Making sure it is alive"
+
+for i in {3..1};
+do
+  echo "Checking \$i, next check in 5 seconds."
+  if ps -p \$sing_pid; 
+  then
+    sleep 5
+  else
+    echo "Container process is dead, abort"
+    echo
+    exit 1
+  fi
+done
+
+EOF
+
+}
+
+###################################################################
+# Submit and monitor the job
+###################################################################
+
+submit_job() {
+    # Start spinner before submission
+    start_spinner "Submitting ${CONFIG[jobname]} job..."
+
+    # Capture job submission output
+    output=$(bsub <"${CONFIG[rstudio_workdir]}/$jobfile" 2>&1)
+    local submit_rc=$?
+
+    # Immediately kill spinner after submission
+    kill_spinner
+
+    if [[ $submit_rc -ne 0 ]]; then
+        echoerror "Submit job failed. Error output:"
+        echo "$output"
+        exit 1
+    else
+        # Process successful submission
+        jobid=$(echo "$output" | awk -F'<|>' '{ print $2 }')
+
+        # Display submission result inline
+        echosuccess_inline "Successfully submitted job: ${jobid}"
+        echo -e "\n" # Add spacing for next messages
+
+        # echoinfo "See below for access instructions once job starts:"
+        # echo ""
+
+        # Phase 1: Wait for job to start using bwait
+        start_spinner "Waiting for job start confirmation..."
+        bwait -w "started($jobid)" -t 300 >/dev/null 2>&1
+        bwait_exit_code=$?
+        kill_spinner
+
+        if [[ $bwait_exit_code -ne 0 ]]; then
+            job_status=$(bjobs -noheader -o stat "$jobid" 2>/dev/null)
+            case $job_status in
+            PEND)
+                echoerror "Job did not start within 5 minutes. Check queue status with: bqueues -l ${CONFIG[queue]}"
+                ;;
+            EXIT)
+                echoerror "Job failed to start. Check error logs: ${CONFIG[rstudio_workdir]}/rstudio_${jobid}.err"
+                ;;
+            *)
+                echoerror "Job monitoring failed with unknown status"
+                ;;
+            esac
+            exit 1
+        fi
+
+        # Phase 2: Wait for connection details
+        start_spinner "Job ${jobid} initialized - awaiting server ready status..."
+        local max_retries=60 # 60 seconds total with 2s intervals
+        local retry_count=0
+        local connection_details=""
+
+        while [[ $retry_count -lt $max_retries ]]; do
+            connection_details=$(bpeek "$jobid" 2>/dev/null)
+            if [[ "$connection_details" == *"CONNECTION INSTRUCTIONS"* ]]; then
+                kill_spinner
+                echosuccess_newline "RStudio server ready"
+                echo "$connection_details"
+                return
+            fi
+
+            ((retry_count++))
+            sleep 1
+        done
+
+        # If we get here, connection details weren't found
+        kill_spinner
+        echoerror "Failed to retrieve connection details after 60 seconds"
+        echoinfo "Check runtime logs manually with: bpeek $jobid"
+        exit 1
+    fi
+}
+
+main() {
+    run_as_user_check
+    parse_args "$@" # Pass command line arguments to parse_args
+    check_inputs
+    check_active_jobs
+    write_bjob_file
+    submit_job
+}
+
+main "$@" # Pass command line arguments to main
